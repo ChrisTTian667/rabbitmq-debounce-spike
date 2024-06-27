@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Debounce.Api;
 using RabbitMQ.Client;
@@ -15,9 +16,15 @@ app.MapPost("/queue-job", (string message, int delay) =>
     using var connection = factory.CreateConnection();
     using var channel = connection.CreateModel();
 
+    var messageHash = ComputeSha256Hash(message);
     var properties = channel.CreateBasicProperties();
-    properties.Headers = new Dictionary<string, object> { { "x-delay", delay } };
-    properties.MessageId = ComputeSha256Hash(message);  // Use message hash as MessageId
+    properties.Headers = new Dictionary<string, object>
+    {
+        { "x-delay", delay },
+        { "x-deduplication-header", messageHash }
+    };
+
+    properties.MessageId = messageHash;  // Use message hash as MessageId
     var body = Encoding.UTF8.GetBytes(message);
 
     channel.BasicPublish(
@@ -32,7 +39,7 @@ app.MapPost("/queue-job", (string message, int delay) =>
 Declare();
 app.Run();
 
-IModel Declare()
+void Declare()
 {
     var factory = new ConnectionFactory() { HostName = "localhost", Port = 5673 };
     using var connection = factory.CreateConnection();
@@ -40,13 +47,13 @@ IModel Declare()
 
     channel.ExchangeDeclare(
         exchange: "dedup_exchange",
-        type: "x-delayed-message",
+        type: "x-message-deduplication",
         arguments: new Dictionary<string, object>
         {
             { "x-delayed-type", "direct" },
             { "x-message-deduplication", "true" },
             { "x-cache-size", 10000 },
-            { "x-cache-ttl", 60000 }
+            { "x-cache-ttl", 5000 }                 // The TimeToLife has to be as long as the longest delay
         });
 
     channel.QueueDeclare(queue: "dedup_queue", durable: true, exclusive: false, autoDelete: false, arguments: new Dictionary<string, object>
@@ -56,17 +63,16 @@ IModel Declare()
     });
 
     channel.QueueBind(queue: "dedup_queue", exchange: "dedup_exchange", routingKey: "dedup_key");
-
-    return channel;
 }
 
 static string ComputeSha256Hash(string rawData)
 {
-    byte[] bytes = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(rawData));
+    var bytes = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(rawData));
     var builder = new StringBuilder();
-    for (int i = 0; i < bytes.Length; i++)
+    foreach (var b in bytes)
     {
-        builder.Append(bytes[i].ToString("x2"));
+        builder.Append(b.ToString("x2", CultureInfo.InvariantCulture));
     }
+
     return builder.ToString();
 }

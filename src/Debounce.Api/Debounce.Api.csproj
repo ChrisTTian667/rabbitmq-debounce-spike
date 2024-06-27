@@ -15,8 +15,4 @@
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
-
-  <Target Name="PreBuild" BeforeTargets="Build">
-    <Exec Command="bash ./start-rabbitmq.sh" />
-  </Target>
 </Project>
