@@ -4,7 +4,7 @@
 // ARGUMENTS
 ///////////////////////////////////////////////////////////////////////////////
 
-string solution = "NetProject.sln";
+string solution = "Debounce.sln";
 
 var target = Argument("target", "Default");
 var configuration = Argument("configuration", "Release");

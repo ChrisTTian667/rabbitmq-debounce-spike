@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32630.192
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{105B8F32-E795-4C15-AD3E-9F2BD7A9CE45}"
+	ProjectSection(SolutionItems) = preProject
+		tests\Directory.Build.props = tests\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{A5181A0E-BE4A-49D7-9C35-F39629C82E18}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		.globalconfig = .globalconfig
+		build.cake = build.cake
+		Directory.Build.props = Directory.Build.props
+		GitVersion.yml = GitVersion.yml
+		global.json = global.json
+		nuget.config = nuget.config
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{52D84088-A48B-4080-8992-239B10CF0EA6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Debounce.Api", "src\Debounce.Api\Debounce.Api.csproj", "{12933F7F-0A9E-4657-B4AE-D00229A9B0E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Debounce.Api.Tests", "tests\Debounce.Api.Tests\Debounce.Api.Tests.csproj", "{71729650-8FEC-4585-B531-7F86CDDF76D2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{12933F7F-0A9E-4657-B4AE-D00229A9B0E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12933F7F-0A9E-4657-B4AE-D00229A9B0E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12933F7F-0A9E-4657-B4AE-D00229A9B0E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12933F7F-0A9E-4657-B4AE-D00229A9B0E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71729650-8FEC-4585-B531-7F86CDDF76D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71729650-8FEC-4585-B531-7F86CDDF76D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71729650-8FEC-4585-B531-7F86CDDF76D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71729650-8FEC-4585-B531-7F86CDDF76D2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {17E5D062-4C17-480F-99B1-7D981A79491A}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{12933F7F-0A9E-4657-B4AE-D00229A9B0E2} = {52D84088-A48B-4080-8992-239B10CF0EA6}
+		{71729650-8FEC-4585-B531-7F86CDDF76D2} = {105B8F32-E795-4C15-AD3E-9F2BD7A9CE45}
+	EndGlobalSection
+EndGlobal
