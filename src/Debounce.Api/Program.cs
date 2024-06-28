@@ -1,6 +1,6 @@
-using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
+
 using Debounce.Api;
 
 using RabbitMQ.Client;
@@ -24,7 +24,7 @@ await DeclareExchanges(channel);
 
 app.MapPost("/queue-job", (string message, int delay) =>
 {
-    var messageHash = ComputeSha256Hash(message);
+    var messageHash = message.ComputeSha256Hash();
     var properties = channel.CreateBasicProperties();
     properties.Headers = new Dictionary<string, object>
     {
@@ -117,18 +117,6 @@ async Task AddShovelConfiguration()
     {
         var responseBody = await response.Content.ReadAsStringAsync();
         throw new InvalidOperationException($"Failed to add shovel configuration: {response.ReasonPhrase}\n{responseBody}");
-
     }
 }
 
-static string ComputeSha256Hash(string rawData)
-{
-    var bytes = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(rawData));
-    var builder = new StringBuilder();
-    foreach (var b in bytes)
-    {
-        builder.Append(b.ToString("x2", CultureInfo.InvariantCulture));
-    }
-
-    return builder.ToString();
-}
