@@ -1,25 +1,26 @@
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json.Serialization;
-
 using Debounce.Api;
 
 using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register the hosted service
 builder.Services.AddHostedService<RabbitMqConsumerService>();
 
 var app = builder.Build();
 
-var factory = new ConnectionFactory() { HostName = "localhost", Port = 5673 };
+var factory = new ConnectionFactory
+{
+    HostName = "localhost",
+    Port = 5673
+};
+
 using var connection = factory.CreateConnection();
 using var channel = connection.CreateModel();
 
-// Declare the exchanges, queues, and shovel configuration
-await Declare(channel);
+await DeclareExchanges(channel);
 
 app.MapPost("/queue-job", (string message, int delay) =>
 {
@@ -45,7 +46,7 @@ app.MapPost("/queue-job", (string message, int delay) =>
 
 await app.RunAsync();
 
-async Task Declare(IModel channel)
+async Task DeclareExchanges(IModel channel)
 {
     // Declare the first exchange for delay handling
     channel.ExchangeDeclare(
@@ -82,7 +83,6 @@ async Task Declare(IModel channel)
     // Bind the deduplication queue to the deduplication exchange
     channel.QueueBind(queue: "dedup_queue", exchange: "dedup_exchange", routingKey: "dedup_key");
 
-    // Add shovel configuration
     await AddShovelConfiguration();
 }
 
@@ -131,31 +131,4 @@ static string ComputeSha256Hash(string rawData)
     }
 
     return builder.ToString();
-}
-
-public class ShovelConfig
-{
-    [JsonPropertyName("src-uri")]
-    public Uri SrcUri { get; set; } = null!;
-
-    [JsonPropertyName("src-queue")]
-    public string SrcQueue { get; set; } = null!;
-
-    [JsonPropertyName("dest-uri")]
-    public Uri DestUri { get; set; } = null!;
-
-    [JsonPropertyName("dest-exchange")]
-    public string DestExchange { get; set; } = null!;
-
-    [JsonPropertyName("dest-exchange-key")]
-    public string DestExchangeKey { get; set; } = null!;
-
-    [JsonPropertyName("ack-mode")]
-    public string AckMode { get; set; } = null!;
-
-    [JsonPropertyName("reconnect-delay")]
-    public int ReconnectDelay { get; set; } = 5;
-
-    [JsonPropertyName("dest-add-forward-headers")]
-    public bool AddForwardHeaders { get; set; } = true;
 }
