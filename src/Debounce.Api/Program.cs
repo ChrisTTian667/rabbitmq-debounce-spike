@@ -2,7 +2,9 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json.Serialization;
+
 using Debounce.Api;
+
 using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -137,19 +139,19 @@ public class ShovelConfig
     public string SrcUri { get; set; } = null!;
 
     [JsonPropertyName("src-queue")]
-    public string SrcQueue { get; set; }= null!;
+    public string SrcQueue { get; set; } = null!;
 
     [JsonPropertyName("dest-uri")]
-    public string DestUri { get; set; }= null!;
+    public string DestUri { get; set; } = null!;
 
     [JsonPropertyName("dest-exchange")]
-    public string DestExchange { get; set; }= null!;
+    public string DestExchange { get; set; } = null!;
 
     [JsonPropertyName("dest-exchange-key")]
-    public string DestExchangeKey { get; set; }= null!;
+    public string DestExchangeKey { get; set; } = null!;
 
     [JsonPropertyName("ack-mode")]
-    public string AckMode { get; set; }= null!;
+    public string AckMode { get; set; } = null!;
 
     [JsonPropertyName("reconnect-delay")]
     public int ReconnectDelay { get; set; } = 5;
