@@ -98,9 +98,9 @@ async Task AddShovelConfiguration()
     {
         value = new ShovelConfig
         {
-            SrcUri = "amqp://localhost",
+            SrcUri = new Uri("amqp://localhost"),
             SrcQueue = "delay_queue",
-            DestUri = "amqp://localhost",
+            DestUri = new Uri("amqp://localhost"),
             DestExchange = "dedup_exchange",
             DestExchangeKey = "dedup_key",
             AckMode = "on-confirm",
@@ -136,13 +136,13 @@ static string ComputeSha256Hash(string rawData)
 public class ShovelConfig
 {
     [JsonPropertyName("src-uri")]
-    public string SrcUri { get; set; } = null!;
+    public Uri SrcUri { get; set; } = null!;
 
     [JsonPropertyName("src-queue")]
     public string SrcQueue { get; set; } = null!;
 
     [JsonPropertyName("dest-uri")]
-    public string DestUri { get; set; } = null!;
+    public Uri DestUri { get; set; } = null!;
 
     [JsonPropertyName("dest-exchange")]
     public string DestExchange { get; set; } = null!;
