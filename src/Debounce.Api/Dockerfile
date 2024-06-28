@@ -15,8 +15,10 @@ RUN curl -L https://github.com/noxdafox/rabbitmq-message-deduplication/releases/
     chown rabbitmq:rabbitmq $RABBITMQ_HOME/plugins/rabbitmq_message_deduplication-0.6.2.ez
 
 # Enable the plugins
-RUN rabbitmq-plugins enable --offline rabbitmq_message_deduplication && \
-    rabbitmq-plugins enable --offline rabbitmq_delayed_message_exchange
+RUN rabbitmq-plugins enable --offline rabbitmq_delayed_message_exchange \
+    rabbitmq_message_deduplication \
+    rabbitmq_shovel \
+    rabbitmq_shovel_management
 
 # Clean up
 RUN apt-get remove --purge -y git build-essential libssl-dev && \
@@ -25,3 +27,6 @@ RUN apt-get remove --purge -y git build-essential libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
 EXPOSE 5672 15672
+
+# Copy configuration files
+COPY rabbitmq.conf /etc/rabbitmq/rabbitmq.conf
