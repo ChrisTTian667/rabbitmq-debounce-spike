@@ -1,28 +1,30 @@
 using System.Text.Json.Serialization;
 
+namespace Debounce.Api;
+
 public class ShovelConfig
 {
     [JsonPropertyName("src-uri")]
-    public Uri SrcUri { get; set; } = null!;
+    public required Uri SrcUri { get; init; }
 
     [JsonPropertyName("src-queue")]
-    public string SrcQueue { get; set; } = null!;
+    public required string SrcQueue { get; init; }
 
     [JsonPropertyName("dest-uri")]
-    public Uri DestUri { get; set; } = null!;
+    public required Uri DestUri { get; init; }
 
     [JsonPropertyName("dest-exchange")]
-    public string DestExchange { get; set; } = null!;
+    public required string DestExchange { get; init; }
 
     [JsonPropertyName("dest-exchange-key")]
-    public string DestExchangeKey { get; set; } = null!;
+    public required string DestExchangeKey { get; init; }
 
     [JsonPropertyName("ack-mode")]
-    public string AckMode { get; set; } = null!;
+    public string? AckMode { get; init; }
 
     [JsonPropertyName("reconnect-delay")]
-    public int ReconnectDelay { get; set; } = 5;
+    public int ReconnectDelay { get; init; } = 5;
 
     [JsonPropertyName("dest-add-forward-headers")]
-    public bool AddForwardHeaders { get; set; } = true;
+    public bool AddForwardHeaders { get; init; } = true;
 }
