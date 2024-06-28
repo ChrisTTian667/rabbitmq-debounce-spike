@@ -43,7 +43,7 @@ app.MapPost("/queue-job", (string message, int delay) =>
     return Results.Ok($"Job with id {properties.MessageId} queued successfully");
 });
 
-app.Run();
+await app.RunAsync();
 
 async Task Declare(IModel channel)
 {
@@ -158,5 +158,4 @@ public class ShovelConfig
 
     [JsonPropertyName("dest-add-forward-headers")]
     public bool AddForwardHeaders { get; set; } = true;
-
 }
