@@ -116,7 +116,7 @@ async Task AddShovelConfiguration()
     if (!response.IsSuccessStatusCode)
     {
         var responseBody = await response.Content.ReadAsStringAsync();
-        throw new Exception($"Failed to add shovel configuration: {response.ReasonPhrase}\n{responseBody}");
+        throw new InvalidOperationException($"Failed to add shovel configuration: {response.ReasonPhrase}\n{responseBody}");
 
     }
 }
