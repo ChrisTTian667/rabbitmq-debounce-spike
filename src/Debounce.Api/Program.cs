@@ -2,14 +2,21 @@ using System.Net.Http.Headers;
 using System.Text;
 
 using Debounce.Api;
-
+using Debounce.Api.RabbitMq;
 using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHostedService<RabbitMqConsumerService>();
+builder.AddRabbitMqEventProvider();
+builder.AddRabbitMqShovels();
 
 var app = builder.Build();
+
+app.MapEvent<string>("dedup_queue", message =>
+{
+    Console.WriteLine(" [x] Received {0}", message);
+    return Task.FromResult(true);
+});
 
 var factory = new ConnectionFactory
 {
@@ -66,7 +73,9 @@ async Task DeclareExchanges(IModel channel)
             { "x-delayed-type", "direct" },
             { "x-message-deduplication", "true" },
             { "x-cache-size", 10000 },
-            { "x-cache-ttl", 5000 } // The TimeToLife has to be as long as the longest delay
+            { "x-cache-ttl", 5000 } // The Cache TimeToLife has to be as long as the longest delay,
+                                    // but a common approach seems to be using multiple exchanges
+                                    // with different TTLs
         });
 
     // Declare the intermediate queue that forwards to the deduplication exchange
@@ -74,7 +83,12 @@ async Task DeclareExchanges(IModel channel)
     channel.QueueBind(queue: "delay_queue", exchange: "delay_exchange", routingKey: "dedup_key");
 
     // Declare the deduplication queue
-    channel.QueueDeclare(queue: "dedup_queue", durable: true, exclusive: false, autoDelete: false, arguments: new Dictionary<string, object>
+    channel.QueueDeclare(
+        queue: "dedup_queue",
+        durable: true,
+        exclusive: false,
+        autoDelete: false,
+        arguments: new Dictionary<string, object>
     {
         { "x-queue-type", "quorum" },
         { "x-message-deduplication", "true" }
@@ -96,8 +110,9 @@ async Task AddShovelConfiguration()
 
     var shovelConfig = new
     {
-        value = new ShovelConfig
+        value = new RabbitMqShovelOptions
         {
+            Name = "shovel_delay_to_dedup",
             SrcUri = new Uri("amqp://localhost"),
             SrcQueue = "delay_queue",
             DestUri = new Uri("amqp://localhost"),
@@ -119,4 +134,3 @@ async Task AddShovelConfiguration()
         throw new InvalidOperationException($"Failed to add shovel configuration: {response.ReasonPhrase}\n{responseBody}");
     }
 }
-

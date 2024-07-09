@@ -1,9 +1,20 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using System.Web;
 
-namespace Debounce.Api;
+namespace Debounce.Api.RabbitMq;
 
-public class ShovelConfig
+public class RabbitMqShovelOptions
 {
+    private string _name = "";
+
+    [JsonIgnore]
+    public string Name
+    {
+        get => HttpUtility.UrlEncode(_name.Trim());
+        set => _name = value;
+    }
+
     [JsonPropertyName("src-uri")]
     public required Uri SrcUri { get; init; }
 
