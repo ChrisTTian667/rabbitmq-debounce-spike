@@ -7,7 +7,7 @@
 //
 // var builder = WebApplication.CreateBuilder(args);
 //
-// builder.Services.AddRabbitMqEventProvider();
+// //builder.Services.AddRabbitMqEventProvider();
 //
 // builder.Services.AddHostedService<RabbitMqConsumerService>();
 //
@@ -118,7 +118,8 @@
 //         }
 //     };
 //
-//     using var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(shovelConfig), Encoding.UTF8, "application/json");
+//     var json = System.Text.Json.JsonSerializer.Serialize(shovelConfig);
+//     using var content = new StringContent(json, Encoding.UTF8, "application/json");
 //
 //     var response = await httpClient.PutAsync(
 //         new Uri("http://localhost:15673/api/parameters/shovel/%2F/shovel_delay_to_dedup"), content);

@@ -12,6 +12,7 @@ public static class ServiceCollectionExtensions
         services.Configure<RabbitMqOptions>(configuration.GetSection("RabbitMQ"));
         services.Configure<List<RabbitMqShovelOptions>>(configuration.GetSection("Shovels"));
         services.TryAddSingleton<RabbitMqService>();
+        services.AddHostedService(sp => sp.GetRequiredService<RabbitMqService>());
 
         return services;
     }

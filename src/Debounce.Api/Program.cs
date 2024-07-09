@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text;
 
 using Debounce.Api;
@@ -97,41 +96,4 @@ async Task DeclareExchanges(IModel channel)
 
     // Bind the deduplication queue to the deduplication exchange
     channel.QueueBind(queue: "dedup_queue", exchange: "dedup_exchange", routingKey: "dedup_key");
-
-    await AddShovelConfiguration();
-}
-
-async Task AddShovelConfiguration()
-{
-    using var httpClient = new HttpClient();
-    var byteArray = "guest:guest"u8.ToArray();
-    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-        "Basic",
-        Convert.ToBase64String(byteArray));
-
-    var shovelConfig = new
-    {
-        value = new RabbitMqShovelOptions
-        {
-            Name = "shovel_delay_to_dedup",
-            SrcUri = new Uri("amqp://localhost"),
-            SrcQueue = "delay_queue",
-            DestUri = new Uri("amqp://localhost"),
-            DestExchange = "dedup_exchange",
-            DestExchangeKey = "dedup_key",
-            AckMode = "on-confirm",
-            ReconnectDelay = 5
-        }
-    };
-
-    using var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(shovelConfig), Encoding.UTF8, "application/json");
-
-    var response = await httpClient.PutAsync(
-        new Uri("http://localhost:15673/api/parameters/shovel/%2F/shovel_delay_to_dedup"), content);
-
-    if (!response.IsSuccessStatusCode)
-    {
-        var responseBody = await response.Content.ReadAsStringAsync();
-        throw new InvalidOperationException($"Failed to add shovel configuration: {response.ReasonPhrase}\n{responseBody}");
-    }
 }

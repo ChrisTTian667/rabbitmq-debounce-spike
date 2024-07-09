@@ -46,7 +46,7 @@ public static class ApplicationBuilderExtensions
     private static IApplicationBuilder UseRabbitMqEvents(this IApplicationBuilder app, string queueName, Func<string, Task<bool>> eventHandler)
     {
         var rabbitMqService = app.ApplicationServices.GetRequiredService<RabbitMqService>();
-        rabbitMqService.ConsumeMessages(queueName, eventHandler);
+        rabbitMqService.RegisterHandler(queueName, eventHandler);
 
         return app;
     }

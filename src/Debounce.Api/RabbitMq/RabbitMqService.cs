@@ -8,16 +8,22 @@ using RabbitMQ.Client.Exceptions;
 
 namespace Debounce.Api.RabbitMq;
 
-public sealed class RabbitMqService : IDisposable
+public sealed class RabbitMqService : IHostedService, IDisposable
 {
+    private bool _disposed;
     private readonly IOptions<RabbitMqOptions> _options;
     private readonly ILogger<RabbitMqService> _logger;
+    private readonly List<IRabbitMqPlugin> _plugins;
     private IConnection _connection = null!;
     private IModel _channel = null!;
     private readonly ConnectionFactory _factory;
     private readonly SemaphoreSlim _reconnectSemaphore = new(1, 1);
+    private readonly List<QueueHandler> _messageHandler = [];
 
-    public RabbitMqService(IOptions<RabbitMqOptions> options, ILogger<RabbitMqService> logger)
+    public RabbitMqService(
+        IOptions<RabbitMqOptions> options,
+        ILogger<RabbitMqService> logger,
+        IEnumerable<IRabbitMqPlugin> plugins)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
@@ -26,20 +32,17 @@ public sealed class RabbitMqService : IDisposable
         var optionValues = options.Value;
 
         _logger = logger;
+        _plugins = plugins.ToList();
 
         _factory = new ConnectionFactory()
         {
             HostName = optionValues.Host,
-            Port = optionValues.Port
+            Port = optionValues.Port,
+            DispatchConsumersAsync = true
         };
-
-        Connect(true);
-
-        optionValues.Exchanges.ToList().ForEach(DeclareExchange);
-        optionValues.Queues.ToList().ForEach(DeclareAndBindQueue);
     }
 
-    private void Connect(bool tryReconnect = false)
+    private async Task ConnectAsync(bool tryReconnect = false, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -49,13 +52,19 @@ public sealed class RabbitMqService : IDisposable
             _connection.ConnectionShutdown += OnConnectionShutdown;
             _connection.CallbackException += OnCallbackException;
             _connection.ConnectionBlocked += OnConnectionBlocked;
+
+            await Task.WhenAll(_plugins.Select(plugin =>
+                plugin.OnConnectedAsync(cancellationToken)));
+
+            foreach (var handler in _messageHandler)
+                CreateConsumer(handler.QueueName, handler.MessageDelegate);
         }
         catch (Exception)
         {
             _logger.FailedToConnect();
 
             if (tryReconnect)
-                Reconnect();
+                await ReconnectAsync();
             else
                 throw;
         }
@@ -63,25 +72,25 @@ public sealed class RabbitMqService : IDisposable
 
     private void OnConnectionShutdown(object? sender, ShutdownEventArgs e)
     {
-        _logger.LogWarning("RabbitMQ connection shutdown: {Reason}", e.ReplyText);
-        Reconnect();
+        _logger.ConnectionShutdown(e.ReplyText);
+        _ = Task.Run(ReconnectAsync).ConfigureAwait(false);
     }
 
     private void OnCallbackException(object? sender, CallbackExceptionEventArgs e)
     {
-        _logger.LogError(e.Exception, "RabbitMQ callback exception");
-        Reconnect();
+        _logger.CallbackException(e.Exception);
+        _ = Task.Run(ReconnectAsync).ConfigureAwait(false);
     }
 
     private void OnConnectionBlocked(object? sender, ConnectionBlockedEventArgs e)
     {
-        _logger.LogWarning("RabbitMQ connection blocked: {Reason}", e.Reason);
-        Reconnect();
+        _logger.ConnectionBlocked(e.Reason);
+        _ = Task.Run(ReconnectAsync).ConfigureAwait(false);
     }
 
-    private void Reconnect()
+    private async Task ReconnectAsync()
     {
-        _reconnectSemaphore.Wait();
+        await _reconnectSemaphore.WaitAsync();
 
         try
         {
@@ -97,7 +106,7 @@ public sealed class RabbitMqService : IDisposable
             {
                 try
                 {
-                    Connect();
+                    await ConnectAsync();
 
                     if (_connection?.IsOpen != true)
                         continue;
@@ -111,7 +120,7 @@ public sealed class RabbitMqService : IDisposable
                     _logger.FailedToReconnect(retryCount + 1);
 
                     // Exponential backoff
-                    Thread.Sleep(TimeSpan.FromSeconds(Math.Min(Math.Pow(2, retryCount), 60)));
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Min(Math.Pow(2, retryCount), 60)));
                     retryCount++;
                 }
             }
@@ -128,35 +137,26 @@ public sealed class RabbitMqService : IDisposable
         }
     }
 
-    public void ConsumeMessages(string queueName, Func<string, Task<bool>> messageHandler)
-    {
-        var consumer = new EventingBasicConsumer(_channel);
+    public void RegisterHandler(string queueName, Func<string, Task<bool>> messageHandler) =>
+        _messageHandler.Add(new(queueName, messageHandler));
 
-        consumer.Received += (_, eventArgs) =>
+    private void CreateConsumer(string queueName, Func<string, Task<bool>> messageHandler)
+    {
+        var consumer = new AsyncEventingBasicConsumer(_channel);
+
+        consumer.Received += async (_, eventArgs) =>
         {
             var body = eventArgs.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
+            var result = await messageHandler(message);
 
-            Task.Run(async () => await messageHandler(message))
-                .ContinueWith(task =>
-                {
-                    if (task.IsFaulted || !task.Result)
-                    {
-                        if (task.IsFaulted)
-                            _logger.FailedHandlingMessage(message, task.Exception);
-
-                        _channel.BasicNack(eventArgs.DeliveryTag, false, true);
-                    }
-                    else
-                        _channel.BasicAck(eventArgs.DeliveryTag, false);
-
-                }, TaskScheduler.Default);
+            if (result)
+                _channel.BasicAck(eventArgs.DeliveryTag, false);
+            else
+                _channel.BasicNack(eventArgs.DeliveryTag, false, true);
         };
 
-        _channel.BasicConsume(
-            queueName,
-            false,
-            consumer);
+        _channel.BasicConsume(queueName, false, consumer);
     }
 
     private void DeclareExchange(RabbitMqExchangeOptions exchangeOptions)
@@ -203,11 +203,37 @@ public sealed class RabbitMqService : IDisposable
 
     private void Dispose(bool disposing)
     {
-        if (!disposing)
-            return;
+        if (_disposed) return;
+        if (!disposing) return;
 
         _channel.Dispose();
         _connection.Dispose();
         _reconnectSemaphore.Dispose();
+
+        _disposed = true;
     }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await ConnectAsync(true, cancellationToken);
+
+            _options.Value.Exchanges.ToList().ForEach(DeclareExchange);
+            _options.Value.Queues.ToList().ForEach(DeclareAndBindQueue);
+
+            await Task.WhenAll(_plugins.Select(plugin =>
+                plugin.StartAsync(cancellationToken)));
+        }
+        catch (Exception ex)
+        {
+            _logger.StartError(ex);
+            throw;
+        }
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) =>
+        Task.CompletedTask;
+
+    private record struct QueueHandler(string QueueName, Func<string, Task<bool>> MessageDelegate);
 }
