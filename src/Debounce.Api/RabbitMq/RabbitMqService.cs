@@ -1,6 +1,7 @@
-using System.Globalization;
 using System.Text;
+
 using Microsoft.Extensions.Options;
+
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;

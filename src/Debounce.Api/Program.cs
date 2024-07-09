@@ -3,6 +3,7 @@ using System.Text;
 
 using Debounce.Api;
 using Debounce.Api.RabbitMq;
+
 using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);

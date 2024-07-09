@@ -1,4 +1,5 @@
 using System.Web;
+
 using RabbitMQ.Client;
 
 namespace Debounce.Api.RabbitMq;

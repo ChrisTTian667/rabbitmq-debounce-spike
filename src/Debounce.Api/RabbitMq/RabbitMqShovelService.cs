@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
 using System.Text;
+
 using Microsoft.Extensions.Options;
 
 namespace Debounce.Api.RabbitMq;
@@ -27,13 +28,13 @@ public class RabbitMqShovelService(
     {
         var shovelOptions = shovelConfigs.Value;
 
-        foreach(var shovelOption in shovelOptions)
+        foreach (var shovelOption in shovelOptions)
         {
             await ApplyShovelConfigurationAsync(shovelOption);
         }
     }
 
-    private async Task ApplyShovelConfigurationAsync([NotNull]RabbitMqShovelOptions shovelOptions)
+    private async Task ApplyShovelConfigurationAsync([NotNull] RabbitMqShovelOptions shovelOptions)
     {
         using var httpClient = new HttpClient();
         var credentials = $"{rabbitMqOptions.Value.UserName}:{rabbitMqOptions.Value.Password}";
@@ -64,7 +65,7 @@ public class RabbitMqShovelService(
         {
             throw;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             logger.ApplyShovelFailed(shovelOptions.Name, ex.Message);
             throw;
