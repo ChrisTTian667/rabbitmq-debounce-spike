@@ -31,12 +31,15 @@ public static partial class RabbitMqLogs
     [LoggerMessage(LogLevel.Information, "Bound queue '{QueueName}' to Exchange '{ExchangeName}'")]
     public static partial void BoundQueue(this ILogger<RabbitMqService> logger, string queueName, string exchangeName);
 
-    [LoggerMessage(LogLevel.Error, "Failed to handle message '{Message}' because '{Error}'")]
+    [LoggerMessage(LogLevel.Error, "Failed to handle message '{Message}'")]
     public static partial void FailedHandlingMessage(this ILogger<RabbitMqService> logger, string message, Exception error);
 }
 
 public static partial class RabbitMqShovelLogs
 {
+    [LoggerMessage(LogLevel.Error, "Failed to add Shovel configuration '{Shovel}'")]
+    public static partial void ApplyShovelFailed(this ILogger<RabbitMqShovelService> logger, string shovel, Exception error);
+
     [LoggerMessage(LogLevel.Error, "Failed to add Shovel configuration '{Shovel}', because '{Error}'")]
     public static partial void ApplyShovelFailed(this ILogger<RabbitMqShovelService> logger, string shovel, string error);
 }

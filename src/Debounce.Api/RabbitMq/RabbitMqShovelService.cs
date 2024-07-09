@@ -67,7 +67,7 @@ public class RabbitMqShovelService(
         }
         catch (Exception ex)
         {
-            logger.ApplyShovelFailed(shovelOptions.Name, ex.Message);
+            logger.ApplyShovelFailed(shovelOptions.Name, ex);
             throw;
         }
     }
